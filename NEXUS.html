@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Proxy</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #0f0f0f;
+            --surface-hover: #1a1a1a;
+            --surface-active: #252525;
+            --border: #1f1f1f;
+            --border-light: #2a2a2a;
+            --text: #e4e4e7;
+            --text-muted: #71717a;
+            --text-dim: #52525b;
+            --accent: #ffffff;
+            --accent-dim: rgba(255, 255, 255, 0.8);
+            --accent-glow: rgba(255, 255, 255, 0.1);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+            --transition-fast: 0.1s ease;
+            --transition-normal: 0.2s ease;
+            --transition-slow: 0.3s ease;
+            --z-base: 1;
+            --z-dropdown: 100;
+            --z-sticky: 500;
+            --z-modal: 1000;
+            --z-toast: 2000;
+            --z-max: 9999;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --bg-image: none;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: 'Inter', system-ui, sans-serif;
+            color: var(--text);
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .browser-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tabs {
+            display: flex;
+            padding: 8px 8px 0;
+            gap: 4px;
+            background: var(--bg);
+            overflow-x: auto;
+        }
+
+        .tabs::-webkit-scrollbar { height: 0; }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            min-width: 180px;
+            max-width: 220px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .tab:hover { background: var(--surface-hover); }
+        .tab.active { background: var(--surface-hover); border-color: var(--border-light); }
+
+        .tab-favicon {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .tab-title {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tab-close {
+            font-size: 16px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 4px;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+
+        .tab-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+        }
+
+        .new-tab {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+
+        .new-tab:hover { background: var(--surface); color: var(--text); }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            background: var(--bg);
+        }
+
+        .nav button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--surface);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+        }
+
+        .nav button:hover { background: var(--surface-hover); color: var(--text); }
+
+        .address-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input.bar {
+            width: 100%;
+            height: 36px;
+            padding: 0 40px 0 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.15s;
+        }
+
+        input.bar:focus { border-color: var(--border-light); background: var(--surface-hover); }
+        input.bar::placeholder { color: var(--text-muted); }
+
+        #home-btn-nav {
+            position: absolute;
+            right: 4px;
+            width: 28px;
+            height: 28px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            padding: 0;
+        }
+
+        #home-btn-nav:hover { color: var(--text); background: var(--surface-hover); }
+
+        .loading-bar-container { height: 2px; background: transparent; }
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--text);
+            transition: width 0.2s ease, opacity 0.15s;
+        }
+
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            background: var(--bg);
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+        }
+
+        .iframe-container iframe.hidden { display: none; }
+        .iframe-container iframe.loading { filter: blur(15px); transition: filter 0.5s ease; }
+
+        .message-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            color: var(--text);
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(10, 10, 10, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .message-content { max-width: 400px; padding: 20px; }
+        .message-content h1 { font-size: 1.25rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+        .message-content p { color: var(--text-muted); font-size: 13px; word-break: break-all; }
+
+        .spinner {
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #skip-btn {
+            margin-top: 20px;
+            padding: 8px 16px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.15s;
+            display: none;
+        }
+
+        #skip-btn:hover { border-color: var(--border-light); color: var(--text); }
+
+        .tab-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .wisp-settings-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .wisp-settings-modal.hidden { display: none; }
+
+        .settings-card {
+            background: var(--surface);
+            width: 400px;
+            max-width: 90vw;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-header h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.15s;
+            display: flex;
+        }
+
+        .close-btn:hover { color: var(--text); background: var(--surface-hover); }
+
+        .settings-content {
+            padding: 20px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .server-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+
+        .wisp-option {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .wisp-option:hover { border-color: var(--border-light); }
+        .wisp-option.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.1); }
+
+        .wisp-option-header { display: flex; justify-content: space-between; align-items: center; }
+
+        .wisp-option-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+        }
+
+        .wisp-option-url { font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); }
+
+        .server-status { display: flex; align-items: center; gap: 6px; }
+        .ping-text { font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); }
+
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-indicator.status-success { background: #22c55e; }
+        .status-indicator.status-error { background: #ef4444; }
+
+        .custom-input-group { display: flex; gap: 8px; }
+
+        .custom-input-group input {
+            flex: 1;
+            height: 36px;
+            padding: 0 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: all 0.15s;
+        }
+
+        .custom-input-group input:focus { border-color: var(--accent); }
+
+        .custom-input-group button {
+            height: 36px;
+            padding: 0 14px;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .custom-input-group button:hover { opacity: 0.9; }
+
+        .settings-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .delete-wisp-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            margin-left: 6px;
+            transition: color 0.15s;
+        }
+
+        .delete-wisp-btn:hover { color: #ef4444; }
+
+        .toggle-switch {
+            width: 40px;
+            height: 20px;
+            background: var(--border);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active { background: var(--accent); }
+
+        .toggle-knob {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch.active .toggle-knob { transform: translateX(20px); }
+
+        .flex { display: flex; }
+
+        .new-tab-page {
+            font-family: 'Nunito', sans-serif;
+            background-color: #1a1a1a;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            transition: background 0.3s ease-in-out;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 40px 60px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            width: 90%;
+            max-width: 700px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .new-tab-page h1 {
+            font-size: 4rem;
+            margin: 0;
+            letter-spacing: 12px;
+            color: #1a1a1a;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .time-container { margin: 10px 0 30px 0; }
+        .clock { font-size: 3rem; font-weight: 700; color: #1a1a1a; }
+        .date { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: 0.7; }
+
+        .search-container-nt {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .search-bar-nt {
+            width: 100%;
+            padding: 15px 25px;
+            border-radius: 50px;
+            border: 3px solid #1a1a1a;
+            background: rgba(255, 255, 255, 0.2);
+            color: #1a1a1a;
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        #engine-nt {
+            position: absolute;
+            right: 15px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .shortcuts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+
+        .shortcut {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .shortcut:hover { transform: translateY(-5px); }
+
+        .shortcut-icon {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #1a1a1a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .shortcut-icon img { width: 24px; height: 24px; border-radius: 4px; }
+        .shortcut-label { font-size: 0.65rem; font-weight: 900; text-transform: uppercase; text-align: center; }
+
+        .quote { margin-top: 30px; font-size: 0.9rem; font-style: italic; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <div class="wisp-settings-modal hidden" id="wisp-settings-modal">
+        <div class="settings-card">
+            <div class="settings-header">
+                <h2><i class="fa-solid fa-server"></i> Proxy Settings</h2>
+                <button class="close-btn" id="close-wisp-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="settings-content">
+                <div class="section-title"><i class="fa-solid fa-cloud"></i> Select Server</div>
+                <div class="server-list" id="server-list"></div>
+                <div class="section-title"><i class="fa-solid fa-plus-circle"></i> Custom Server</div>
+                <div class="custom-input-group">
+                    <input type="text" id="custom-wisp-input" placeholder="wss://your-wisp-server.com/wisp/">
+                    <button id="save-custom-wisp"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="settings-footer">Lower ping = faster browsing</div>
+        </div>
+    </div>
+
+    <!-- libcurl.js WASM -->
+    <script src="https://cdn.jsdelivr.net/npm/libcurl.js@latest/libcurl_full.js" defer></script>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const DEFAULT_WISP = "wss://wisp.mercurywork.shop/";
+        const WISP_SERVERS = [{ name: "MercuryWorkshop", url: "wss://wisp.mercurywork.shop/" }];
+
+        if (!localStorage.getItem("proxServer")) {
+            localStorage.setItem("proxServer", DEFAULT_WISP);
+        }
+
+        function getAllWispServers() {
+            const customWisps = getStoredWisps();
+            return [...WISP_SERVERS, ...customWisps];
+        }
+
+        // ===== UTILITIES =====
+        const getStoredWisps = () => {
+            try { return JSON.parse(localStorage.getItem('customWisps') ?? '[]'); }
+            catch { return []; }
+        };
+
+        const notify = (type, title, message) => {
+            console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
+        };
+
+        // ===== SERVER HEALTH =====
+        async function pingWispServer(url, timeout = 2000) {
+            return new Promise((resolve) => {
+                const start = Date.now();
+                try {
+                    const ws = new WebSocket(url);
+                    const timer = setTimeout(() => {
+                        try { ws.close(); } catch {}
+                        resolve({ url, success: false, latency: null });
+                    }, timeout);
+
+                    ws.onopen = () => {
+                        clearTimeout(timer);
+                        const latency = Date.now() - start;
+                        try { ws.close(); } catch {}
+                        resolve({ url, success: true, latency });
+                    };
+
+                    ws.onerror = () => {
+                        clearTimeout(timer);
+                        try { ws.close(); } catch {}
+                        resolve({ url, success: false, latency: null });
+                    };
+                } catch {
+                    resolve({ url, success: false, latency: null });
+                }
+            });
+        }
+
+        async function findBestWispServer(servers, currentUrl) {
+            if (!servers || servers.length === 0) return currentUrl;
+            const results = await Promise.all(servers.map(s => pingWispServer(s.url, 2000)));
+            const working = results.filter(r => r.success).sort((a, b) => a.latency - b.latency);
+            if (working.length > 0) return working[0].url;
+            return currentUrl || servers[0]?.url;
+        }
+
+        async function initializeWithBestServer() {
+            const autoswitch = localStorage.getItem('wispAutoswitch') !== 'false';
+            const allServers = getAllWispServers();
+            if (!autoswitch || allServers.length <= 1) return;
+            const currentUrl = localStorage.getItem("proxServer") || DEFAULT_WISP;
+            const currentCheck = await pingWispServer(currentUrl, 2000);
+            if (currentCheck.success) return;
+            const best = await findBestWispServer(allServers, currentUrl);
+            if (best && best !== currentUrl) {
+                localStorage.setItem("proxServer", best);
+                notify('info', 'Auto-switched', `Using faster server`);
+            }
+        }
+
+        // ===== BROWSER STATE =====
+        let libcurlReady = false;
+        let tabs = [];
+        let activeTabId = null;
+        let nextTabId = 1;
+        let tabHistory = new Map(); // Store history for each tab
+
+        const getActiveTab = () => tabs.find(t => t.id === activeTabId);
+
+        // ===== LIBCURL INITIALIZATION =====
+        async function initLibcurl() {
+            if (libcurlReady) return;
+            
+            const wispUrl = localStorage.getItem("proxServer") ?? DEFAULT_WISP;
+            
+            // Wait for libcurl to be available (loaded via defer)
+            while (typeof libcurl === 'undefined') {
+                await new Promise(r => setTimeout(r, 50));
+            }
+            
+            // Set the WebSocket proxy URL for libcurl
+            libcurl.set_websocket(wispUrl);
+            
+            libcurlReady = true;
+            console.log('libcurl.js initialized with Wisp server:', wispUrl);
+        }
+
+        // ===== NEW TAB PAGE HTML =====
+        const NEW_TAB_HTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%; width: 100%;
+            font-family: 'Nunito', sans-serif;
+            background-color: #1a1a1a;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 40px 60px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            width: 90%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        h1 { font-size: 4rem; margin: 0; letter-spacing: 12px; color: #1a1a1a; font-weight: 900; text-transform: uppercase; }
+        .time-container { margin: 10px 0 30px 0; }
+        .clock { font-size: 3rem; font-weight: 700; color: #1a1a1a; }
+        .date { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: 0.7; }
+        .search-container { display: flex; align-items: center; width: 100%; margin-bottom: 40px; position: relative; }
+        .search-bar {
+            width: 100%; padding: 15px 25px; border-radius: 50px; border: 3px solid #1a1a1a;
+            background: rgba(255, 255, 255, 0.2); color: #1a1a1a; font-size: 1.1rem; outline: none;
+        }
+        #engine { position: absolute; right: 15px; background: #1a1a1a; color: white; border: none; border-radius: 20px; padding: 5px 10px; cursor: pointer; }
+        .shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 15px; width: 100%; }
+        .shortcut { display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: #1a1a1a; cursor: pointer; transition: transform 0.2s; }
+        .shortcut:hover { transform: translateY(-5px); }
+        .shortcut-icon { width: 50px; height: 50px; border: 2px solid #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; background: rgba(255,255,255,0.3); }
+        .shortcut-icon img { width: 24px; height: 24px; border-radius: 4px; }
+        .shortcut-label { font-size: 0.65rem; font-weight: 900; text-transform: uppercase; text-align: center; }
+        .quote { margin-top: 30px; font-size: 0.9rem; font-style: italic; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div class="glass-panel">
+        <h1>NEXUS</h1>
+        <div class="time-container">
+            <div class="clock" id="clock">00:00</div>
+            <div class="date" id="date">LOADING...</div>
+        </div>
+        <form class="search-container" id="searchForm">
+            <input type="text" id="searchInput" class="search-bar" placeholder="Search the web..." autocomplete="off">
+            <select id="engine">
+                <option value="https://search.brave.com/search?q=">Brave</option>
+                <option value="https://duckduckgo.com/?q=">DDG</option>
+                <option value="https://www.google.com/search?q=">Google</option>
+            </select>
+        </form>
+        <div class="shortcuts" id="shortcuts">
+            <a class="shortcut" data-url="https://crazygames.com">
+                <div class="shortcut-icon"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSS2Kuc0ZioZ0Vti_KtXEWpAuV61bYp16qfKA&s"></div>
+                <span class="shortcut-label">CrazyGames</span>
+            </a>
+            <a class="shortcut" data-url="https://youtube.com">
+                <div class="shortcut-icon"><img src="https://www.youtube.com/favicon.ico"></div>
+                <span class="shortcut-label">YouTube</span>
+            </a>
+            <a class="shortcut" data-url="https://open.spotify.com/">
+                <div class="shortcut-icon"><img src="https://open.spotify.com/favicon.ico"></div>
+                <span class="shortcut-label">Spotify</span>
+            </a>
+            <a class="shortcut" data-url="https://pluto.tv/">
+                <div class="shortcut-icon"><img src="https://cdn.theorg.com/a250f7c7-8d93-487f-bc35-69a5e2145115_medium.jpg"></div>
+                <span class="shortcut-label">Pluto TV</span>
+            </a>
+            <div id="customShortcuts" style="display: contents;"></div>
+            <div class="shortcut" id="uploadBtn">
+                <div class="shortcut-icon"><i class="fa-solid fa-image"></i></div>
+                <span class="shortcut-label">Set BG</span>
+            </div>
+            <div class="shortcut" id="resetBtn">
+                <div class="shortcut-icon"><i class="fa-solid fa-rotate-left"></i></div>
+                <span class="shortcut-label">Reset BG</span>
+            </div>
+            <div class="shortcut" id="addShortcut">
+                <div class="shortcut-icon"><i class="fa-solid fa-plus"></i></div>
+                <span class="shortcut-label">Add</span>
+            </div>
+        </div>
+        <div class="quote" id="quote"></div>
+    </div>
+    <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+    <script>
+        const $ = s => document.querySelector(s);
+        const bgUpload = $('#bgUpload');
+        
+        const nav = url => {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'navigate', url }, '*');
+            } else {
+                window.location.href = url;
+            }
+        };
+
+        function loadBackground() {
+            const savedBg = localStorage.getItem('customBg');
+            document.body.style.backgroundImage = savedBg ? 'url(' + savedBg + ')' : '';
+            if (!savedBg) {
+                document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+        }
+        loadBackground();
+
+        function updateClock() {
+            const now = new Date();
+            $('#clock').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            $('#date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        $('#searchForm').onsubmit = e => {
+            e.preventDefault();
+            const q = $('#searchInput').value.trim();
+            if (q) nav($('#engine').value + encodeURIComponent(q));
+        };
+
+        $('#shortcuts').onclick = e => {
+            const shortcut = e.target.closest('.shortcut[data-url]');
+            const addBtn = e.target.closest('#addShortcut');
+            const uploadBtn = e.target.closest('#uploadBtn');
+            const resetBtn = e.target.closest('#resetBtn');
+
+            if (shortcut) nav(shortcut.dataset.url);
+            else if (uploadBtn) bgUpload.click();
+            else if (resetBtn) { localStorage.removeItem('customBg'); loadBackground(); }
+            else if (addBtn) {
+                const name = prompt("Shortcut name:");
+                let url = name ? prompt("URL:") : null;
+                if (url) {
+                    if (!url.startsWith('http')) url = 'https://' + url;
+                    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || '[]');
+                    shortcuts.push({ name, url });
+                    localStorage.setItem('shortcuts', JSON.stringify(shortcuts));
+                    renderCustom();
+                }
+            }
+        };
+
+        bgUpload.onchange = e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const imgData = event.target.result;
+                    document.body.style.backgroundImage = 'url(' + imgData + ')';
+                    document.body.style.backgroundColor = '#1a1a1a';
+                    try { localStorage.setItem('customBg', imgData); }
+                    catch (err) { alert("Image too large!"); }
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        function renderCustom() {
+            const container = $('#customShortcuts');
+            container.innerHTML = '';
+            const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || '[]');
+            shortcuts.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'shortcut';
+                div.dataset.url = s.url;
+                div.innerHTML = '<div class="shortcut-icon"><i class="fa-solid fa-link"></i></div><span class="shortcut-label">' + s.name + '</span>';
+                container.appendChild(div);
+            });
+        }
+
+        const quotes = ["Gaming Paradise", "Made by Bubber", "Bro just do your work", "Best Browser awarded by me", "almost as good as GUST"];
+        $('#quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+        renderCustom();
+    <\/script>
+</body>
+</html>`;
+
+        // ===== BROWSER INITIALIZATION =====
+        async function initializeBrowser() {
+            const root = document.getElementById("app");
+            root.innerHTML = `
+                <div class="browser-container">
+                    <div class="flex tabs" id="tabs-container"></div>
+                    <div class="flex nav">
+                        <button id="back-btn" title="Back"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button id="fwd-btn" title="Forward"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button id="reload-btn" title="Reload"><i class="fa-solid fa-rotate-right"></i></button>
+                        <div class="address-wrapper">
+                            <input class="bar" id="address-bar" autocomplete="off" placeholder="Search or enter URL">
+                            <button id="home-btn-nav" title="Home"><i class="fa-solid fa-house"></i></button>
+                        </div>
+                        <button id="devtools-btn" title="DevTools"><i class="fa-solid fa-code"></i></button>
+                        <button id="wisp-settings-btn" title="Proxy Settings"><i class="fa-solid fa-gear"></i></button>
+                    </div>
+                    <div class="loading-bar-container"><div class="loading-bar" id="loading-bar"></div></div>
+                    <div class="iframe-container" id="iframe-container">
+                        <div id="loading" class="message-container" style="display: none;">
+                            <div class="message-content">
+                                <div class="spinner"></div>
+                                <h1 id="loading-title">Connecting</h1>
+                                <p id="loading-url">Initializing proxy...</p>
+                                <button id="skip-btn">Skip</button>
+                            </div>
+                        </div>
+                        <div id="error" class="message-container" style="display: none;">
+                            <div class="message-content">
+                                <h1>Connection Error</h1>
+                                <p id="error-message">An error occurred.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            const elements = {
+                backBtn: document.getElementById('back-btn'),
+                fwdBtn: document.getElementById('fwd-btn'),
+                reloadBtn: document.getElementById('reload-btn'),
+                addrBar: document.getElementById('address-bar'),
+                skipBtn: document.getElementById('skip-btn')
+            };
+
+            elements.backBtn.onclick = () => {
+                const tab = getActiveTab();
+                if (tab && tab.history && tab.historyIndex > 0) {
+                    tab.historyIndex--;
+                    loadUrl(tab.history[tab.historyIndex], false);
+                }
+            };
+            
+            elements.fwdBtn.onclick = () => {
+                const tab = getActiveTab();
+                if (tab && tab.history && tab.historyIndex < tab.history.length - 1) {
+                    tab.historyIndex++;
+                    loadUrl(tab.history[tab.historyIndex], false);
+                }
+            };
+            
+            elements.reloadBtn.onclick = () => {
+                const tab = getActiveTab();
+                if (tab && tab.url) loadUrl(tab.url);
+            };
+            
+            document.getElementById('home-btn-nav').onclick = () => location.reload();
+            document.getElementById('devtools-btn').onclick = toggleDevTools;
+            document.getElementById('wisp-settings-btn').onclick = openSettings;
+
+            elements.skipBtn.onclick = () => {
+                const tab = getActiveTab();
+                if (tab) { tab.loading = false; showIframeLoading(false); }
+            };
+
+            elements.addrBar.onkeyup = (e) => e.key === 'Enter' && handleSubmit();
+            elements.addrBar.onfocus = () => elements.addrBar.select();
+
+            window.addEventListener('message', (e) => {
+                if (e.data?.type === 'navigate') handleSubmit(e.data.url);
+            });
+
+            createTab(true);
+            checkHashParameters();
+        }
+
+        // ===== TAB MANAGEMENT =====
+        function createTab(makeActive = true) {
+            const frame = document.createElement('iframe');
+            frame.style.width = '100%';
+            frame.style.height = '100%';
+            frame.style.border = 'none';
+            frame.style.position = 'absolute';
+            frame.sandbox = 'allow-same-origin allow-scripts allow-popups allow-forms';
+            
+            const tab = {
+                id: nextTabId++,
+                title: "New Tab",
+                url: "",
+                frame,
+                loading: false,
+                favicon: null,
+                skipTimeout: null,
+                loadStartTime: null,
+                history: [],
+                historyIndex: -1
+            };
+
+            const blob = new Blob([NEW_TAB_HTML], { type: 'text/html' });
+            frame.src = URL.createObjectURL(blob);
+
+            tabs.push(tab);
+            document.getElementById("iframe-container").appendChild(frame);
+            if (makeActive) switchTab(tab.id);
+            return tab;
+        }
+
+        function showIframeLoading(show, url = '') {
+            const loader = document.getElementById("loading");
+            if (!loader) return;
+            loader.style.display = show ? "flex" : "none";
+            getActiveTab()?.frame.classList.toggle('loading', show);
+            if (show) {
+                document.getElementById("loading-title").textContent = "Connecting";
+                document.getElementById("loading-url").textContent = url || "Loading content...";
+                document.getElementById("skip-btn").style.display = 'none';
+            }
+        }
+
+        function switchTab(tabId) {
+            activeTabId = tabId;
+            const tab = getActiveTab();
+            tabs.forEach(t => t.frame.classList.toggle("hidden", t.id !== tabId));
+            if (tab) {
+                showIframeLoading(tab.loading, tab.url);
+                const skipBtn = document.getElementById('skip-btn');
+                if (tab.loading && tab.loadStartTime && skipBtn) {
+                    const elapsed = Date.now() - tab.loadStartTime;
+                    if (elapsed > 3000) skipBtn.style.display = 'inline-block';
+                }
+            }
+            updateTabsUI();
+            updateAddressBar();
+        }
+
+        function closeTab(tabId) {
+            const idx = tabs.findIndex(t => t.id === tabId);
+            if (idx === -1) return;
+            const tab = tabs[idx];
+            clearTimeout(tab.skipTimeout);
+            if (tab.frame) {
+                tab.frame.src = 'about:blank';
+                tab.frame.remove();
+            }
+            tabs.splice(idx, 1);
+            if (activeTabId === tabId) {
+                if (tabs.length > 0) switchTab(tabs[Math.max(0, idx - 1)].id);
+                else location.reload();
+            } else {
+                updateTabsUI();
+            }
+        }
+
+        function updateTabsUI() {
+            const container = document.getElementById("tabs-container");
+            container.innerHTML = "";
+            tabs.forEach(tab => {
+                const el = document.createElement("div");
+                el.className = 'tab ' + (tab.id === activeTabId ? "active" : "");
+                const iconHtml = tab.loading 
+                    ? '<div class="tab-spinner"></div>'
+                    : tab.favicon 
+                        ? '<img src="' + tab.favicon + '" class="tab-favicon" onerror="this.style.display=\'none\'">'
+                        : '';
+                el.innerHTML = iconHtml + '<span class="tab-title">' + tab.title + '</span><span class="tab-close">&times;</span>';
+                el.onclick = () => switchTab(tab.id);
+                el.querySelector(".tab-close").onclick = (e) => { e.stopPropagation(); closeTab(tab.id); };
+                container.appendChild(el);
+            });
+            const newBtn = document.createElement("button");
+            newBtn.className = "new-tab";
+            newBtn.innerHTML = "<i class='fa-solid fa-plus'></i>";
+            newBtn.onclick = () => createTab(true);
+            container.appendChild(newBtn);
+        }
+
+        function updateAddressBar() {
+            const bar = document.getElementById("address-bar");
+            const tab = getActiveTab();
+            if (bar && tab) bar.value = tab.url || "";
+        }
+
+        async function loadUrl(url, addToHistory = true) {
+            const tab = getActiveTab();
+            if (!tab) return;
+            
+            tab.loading = true;
+            tab.loadStartTime = Date.now();
+            showIframeLoading(true, url);
+            updateLoadingBar(tab, 20);
+            
+            try {
+                // Use libcurl.fetch to get the content through the Wisp proxy
+                const response = await libcurl.fetch(url);
+                const contentType = response.headers.get('content-type') || '';
+                
+                updateLoadingBar(tab, 60);
+                
+                if (contentType.includes('text/html')) {
+                    let html = await response.text();
+                    
+                    // Basic URL rewriting for relative URLs
+                    const baseUrl = new URL(url);
+                    html = html.replace(/(href|src)=["']\/([^"']*)["']/g, `$1="${baseUrl.origin}/$2"`);
+                    html = html.replace(/(href|src)=["'](?!https?:\/\/)([^"']*)["']/g, `$1="${baseUrl.origin}/$2"`);
+                    
+                    // Inject a script to intercept navigation
+                    const proxyScript = `
+                        <script>
+                            // Override fetch to use parent's libcurl
+                            window.fetch = function(url, options) {
+                                if (window.parent !== window && window.parent.libcurl) {
+                                    return window.parent.libcurl.fetch(url, options);
+                                }
+                                return fetch(url, options);
+                            };
+                            
+                            // Intercept link clicks
+                            document.addEventListener('click', function(e) {
+                                const link = e.target.closest('a');
+                                if (link && link.href && !link.href.startsWith('javascript:')) {
+                                    e.preventDefault();
+                                    window.parent.postMessage({ type: 'navigate', url: link.href }, '*');
+                                }
+                            });
+                            
+                            // Intercept form submissions
+                            document.addEventListener('submit', function(e) {
+                                const form = e.target;
+                                if (form.action) {
+                                    e.preventDefault();
+                                    const formData = new FormData(form);
+                                    const params = new URLSearchParams(formData);
+                                    const url = form.method === 'post' ? form.action : form.action + '?' + params.toString();
+                                    window.parent.postMessage({ type: 'navigate', url: url }, '*');
+                                }
+                            });
+                        <\/script>
+                    `;
+                    
+                    // Insert before closing </head> or at the beginning
+                    if (html.includes('</head>')) {
+                        html = html.replace('</head>', proxyScript + '</head>');
+                    } else {
+                        html = proxyScript + html;
+                    }
+                    
+                    // Write to iframe
+                    const doc = tab.frame.contentDocument || tab.frame.contentWindow.document;
+                    doc.open();
+                    doc.write(html);
+                    doc.close();
+                    
+                    // Update tab info
+                    try {
+                        tab.title = doc.title || baseUrl.hostname;
+                    } catch {
+                        tab.title = baseUrl.hostname;
+                    }
+                    tab.favicon = 'https://www.google.com/s2/favicons?domain=' + baseUrl.hostname + '&sz=32';
+                } else {
+                    // For non-HTML content, create a simple viewer or download
+                    const blob = await response.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    tab.frame.src = objectUrl;
+                    tab.title = new URL(url).pathname.split('/').pop() || 'File';
+                }
+                
+                tab.url = url;
+                
+                // Add to history
+                if (addToHistory) {
+                    if (tab.historyIndex < tab.history.length - 1) {
+                        tab.history = tab.history.slice(0, tab.historyIndex + 1);
+                    }
+                    tab.history.push(url);
+                    tab.historyIndex++;
+                }
+                
+            } catch (error) {
+                console.error('Navigation error:', error);
+                const errorDiv = document.getElementById('error');
+                if (errorDiv) {
+                    errorDiv.style.display = 'flex';
+                    document.getElementById('error-message').textContent = error.message || 'Failed to load page';
+                }
+                tab.title = 'Error';
+            }
+            
+            tab.loading = false;
+            showIframeLoading(false);
+            updateTabsUI();
+            updateAddressBar();
+            updateLoadingBar(tab, 100);
+        }
+
+        function handleSubmit(url) {
+            let input = url ?? document.getElementById("address-bar").value.trim();
+            if (!input) return;
+            
+            if (!input.startsWith('http')) {
+                input = input.includes('.') && !input.includes(' ') 
+                    ? 'https://' + input
+                    : 'https://search.brave.com/search?q=' + encodeURIComponent(input);
+            }
+            
+            loadUrl(input);
+        }
+
+        function updateLoadingBar(tab, percent) {
+            if (tab.id !== activeTabId) return;
+            const bar = document.getElementById("loading-bar");
+            bar.style.width = percent + "%";
+            bar.style.opacity = percent === 100 ? "0" : "1";
+            if (percent === 100) setTimeout(() => { bar.style.width = "0%"; }, 200);
+        }
+
+        // ===== SETTINGS =====
+        function openSettings() {
+            const modal = document.getElementById('wisp-settings-modal');
+            modal.classList.remove('hidden');
+            document.getElementById('close-wisp-modal').onclick = () => modal.classList.add('hidden');
+            document.getElementById('save-custom-wisp').onclick = saveCustomWisp;
+            modal.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
+            renderServerList();
+        }
+
+        function renderServerList() {
+            const list = document.getElementById('server-list');
+            list.innerHTML = '';
+            const currentUrl = localStorage.getItem('proxServer') ?? DEFAULT_WISP;
+            const allWisps = [...WISP_SERVERS, ...getStoredWisps()];
+
+            allWisps.forEach((server, index) => {
+                const isActive = server.url === currentUrl;
+                const isCustom = index >= WISP_SERVERS.length;
+                const item = document.createElement('div');
+                item.className = 'wisp-option ' + (isActive ? 'active' : '');
+                const deleteBtn = isCustom
+                    ? '<button class="delete-wisp-btn" onclick="event.stopPropagation(); deleteCustomWisp(\'' + server.url + '\')"><i class="fa-solid fa-trash"></i></button>'
+                    : '';
+                item.innerHTML = `
+                    <div class="wisp-option-header">
+                        <div class="wisp-option-name">${server.name} ${isActive ? '<i class="fa-solid fa-check" style="margin-left:8px; font-size: 0.7em; color: var(--accent);"></i>' : ''}</div>
+                        <div class="server-status">
+                            <span class="ping-text">...</span>
+                            <div class="status-indicator"></div>
+                            ${deleteBtn}
+                        </div>
+                    </div>
+                    <div class="wisp-option-url">${server.url}</div>`;
+                item.onclick = () => setWisp(server.url);
+                list.appendChild(item);
+                checkServerHealth(server.url, item);
+            });
+
+            const isAutoswitch = localStorage.getItem('wispAutoswitch') !== 'false';
+            const toggleContainer = document.createElement('div');
+            toggleContainer.className = 'wisp-option';
+            toggleContainer.style.cssText = 'margin-top: 10px; cursor: default;';
+            toggleContainer.innerHTML = `
+                <div class="wisp-option-header" style="justify-content: space-between;">
+                    <div class="wisp-option-name"><i class="fa-solid fa-rotate" style="margin-right:8px"></i> Auto-switch on failure</div>
+                    <div class="toggle-switch ${isAutoswitch ? 'active' : ''}" id="autoswitch-toggle">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>`;
+            toggleContainer.onclick = () => {
+                const newState = !isAutoswitch;
+                localStorage.setItem('wispAutoswitch', newState);
+                document.getElementById('autoswitch-toggle').classList.toggle('active', newState);
+                notify('success', 'Settings Saved', 'Autoswitch ' + (newState ? 'Enabled' : 'Disabled'));
+                location.reload();
+            };
+            list.appendChild(toggleContainer);
+        }
+
+        function saveCustomWisp() {
+            const input = document.getElementById('custom-wisp-input');
+            const url = input.value.trim();
+            if (!url) return;
+            if (!url.startsWith('ws://') && !url.startsWith('wss://')) {
+                notify('error', 'Invalid URL', 'URL must start with wss:// or ws://');
+                return;
+            }
+            const customWisps = getStoredWisps();
+            if (customWisps.some(w => w.url === url) || WISP_SERVERS.some(w => w.url === url)) {
+                notify('warning', 'Already Exists', 'This server is already in the list.');
+                return;
+            }
+            const newServer = { name: 'Custom ' + (customWisps.length + 1), url };
+            customWisps.push(newServer);
+            localStorage.setItem('customWisps', JSON.stringify(customWisps));
+            setWisp(url);
+            input.value = '';
+        }
+
+        window.deleteCustomWisp = function(urlToDelete) {
+            if (!confirm("Remove this server?")) return;
+            let customWisps = getStoredWisps().filter(w => w.url !== urlToDelete);
+            localStorage.setItem('customWisps', JSON.stringify(customWisps));
+            if (localStorage.getItem('proxServer') === urlToDelete) setWisp(DEFAULT_WISP);
+            else renderServerList();
+        };
+
+        async function checkServerHealth(url, element) {
+            const dot = element.querySelector('.status-indicator');
+            const text = element.querySelector('.ping-text');
+            const start = Date.now();
+            const markOffline = () => { dot.classList.add('status-error'); text.textContent = "Offline"; };
+            try {
+                const wsTest = new WebSocket(url);
+                wsTest.onopen = () => {
+                    dot.classList.add('status-success');
+                    text.textContent = (Date.now() - start) + "ms";
+                    wsTest.close();
+                };
+                wsTest.onerror = markOffline;
+                setTimeout(() => {
+                    if (wsTest.readyState !== WebSocket.OPEN) { wsTest.close(); markOffline(); }
+                }, 1000);
+            } catch { markOffline(); }
+        }
+
+        function setWisp(url) {
+            const oldUrl = localStorage.getItem('proxServer');
+            localStorage.setItem('proxServer', url);
+            if (oldUrl !== url) {
+                const serverName = [...WISP_SERVERS, ...getStoredWisps()].find(s => s.url === url)?.name ?? 'Custom Server';
+                notify('success', 'Proxy Changed', 'Switching to ' + serverName + '...');
+            }
+            setTimeout(() => location.reload(), 600);
+        }
+
+        function toggleDevTools() {
+            const win = getActiveTab()?.frame.contentWindow;
+            if (!win) return;
+            if (win.eruda) { win.eruda.show(); return; }
+            const script = win.document.createElement('script');
+            script.src = "https://cdn.jsdelivr.net/npm/eruda";
+            script.onload = () => { win.eruda.init(); win.eruda.show(); };
+            win.document.body.appendChild(script);
+        }
+
+        async function checkHashParameters() {
+            if (window.location.hash) {
+                const hash = decodeURIComponent(window.location.hash.substring(1));
+                if (hash) handleSubmit(hash);
+                history.replaceState(null, null, location.pathname);
+            }
+        }
+
+        // ===== MAIN INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await initializeWithBestServer();
+                await initLibcurl();
+                await initializeBrowser();
+            } catch (err) {
+                console.error("Initialization error:", err);
+            }
+        });
+    </script>
+</body>
+</html>
