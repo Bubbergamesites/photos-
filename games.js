@@ -1508,6 +1508,7 @@
 "NewSuperMarioWorld2AroundtheWorld",
 "newyorkshark",
 "nextdoor",
+"NEXUS-PROXY",
 "nflblitz",
 "nfscarbonowncity",
 "nfsmostwanted",
