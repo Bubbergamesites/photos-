@@ -631,12 +631,74 @@
     <script src="https://cdn.jsdelivr.net/npm/libcurl.js@latest/libcurl_full.js" defer></script>
 
     <script>
+        // ===== SAFE STORAGE WRAPPER (works with file:// protocol) =====
+        const storage = (function() {
+            const memoryStore = {};
+            let localStorageAvailable = false;
+            
+            try {
+                localStorage.setItem('__test__', 'test');
+                localStorage.removeItem('__test__');
+                localStorageAvailable = true;
+            } catch (e) {
+                console.log('localStorage not available, using memory fallback');
+            }
+            
+            return {
+                getItem(key, defaultValue = null) {
+                    try {
+                        if (localStorageAvailable) {
+                            const val = localStorage.getItem(key);
+                            return val !== null ? val : defaultValue;
+                        }
+                        return memoryStore[key] !== undefined ? memoryStore[key] : defaultValue;
+                    } catch (e) {
+                        return memoryStore[key] !== undefined ? memoryStore[key] : defaultValue;
+                    }
+                },
+                setItem(key, value) {
+                    try {
+                        if (localStorageAvailable) {
+                            localStorage.setItem(key, value);
+                        }
+                        memoryStore[key] = String(value);
+                    } catch (e) {
+                        memoryStore[key] = String(value);
+                    }
+                },
+                removeItem(key) {
+                    try {
+                        if (localStorageAvailable) localStorage.removeItem(key);
+                        delete memoryStore[key];
+                    } catch (e) {
+                        delete memoryStore[key];
+                    }
+                },
+                getObject(key, defaultValue = null) {
+                    try {
+                        const val = this.getItem(key);
+                        return val ? JSON.parse(val) : defaultValue;
+                    } catch (e) {
+                        return defaultValue;
+                    }
+                },
+                setObject(key, value) {
+                    try {
+                        this.setItem(key, JSON.stringify(value));
+                    } catch (e) {
+                        // If can't stringify, store empty
+                    }
+                }
+            };
+        })();
+
         // ===== CONFIGURATION =====
         const DEFAULT_WISP = "wss://wisp.mercurywork.shop/";
         const WISP_SERVERS = [{ name: "MercuryWorkshop", url: "wss://wisp.mercurywork.shop/" }];
 
-        if (!localStorage.getItem("proxServer")) {
-            localStorage.setItem("proxServer", DEFAULT_WISP);
+        // Initialize default if not set
+        if (!storage.getItem("proxServer")) {
+            storage.setItem("proxServer", DEFAULT_WISP);
         }
 
         function getAllWispServers() {
@@ -646,8 +708,7 @@
 
         // ===== UTILITIES =====
         const getStoredWisps = () => {
-            try { return JSON.parse(localStorage.getItem('customWisps') ?? '[]'); }
-            catch { return []; }
+            return storage.getObject('customWisps', []);
         };
 
         const notify = (type, title, message) => {
@@ -692,15 +753,15 @@
         }
 
         async function initializeWithBestServer() {
-            const autoswitch = localStorage.getItem('wispAutoswitch') !== 'false';
+            const autoswitch = storage.getItem('wispAutoswitch', 'true') !== 'false';
             const allServers = getAllWispServers();
             if (!autoswitch || allServers.length <= 1) return;
-            const currentUrl = localStorage.getItem("proxServer") || DEFAULT_WISP;
+            const currentUrl = storage.getItem("proxServer") || DEFAULT_WISP;
             const currentCheck = await pingWispServer(currentUrl, 2000);
             if (currentCheck.success) return;
             const best = await findBestWispServer(allServers, currentUrl);
             if (best && best !== currentUrl) {
-                localStorage.setItem("proxServer", best);
+                storage.setItem("proxServer", best);
                 notify('info', 'Auto-switched', `Using faster server`);
             }
         }
@@ -710,7 +771,7 @@
         let tabs = [];
         let activeTabId = null;
         let nextTabId = 1;
-        let tabHistory = new Map(); // Store history for each tab
+        let tabHistory = new Map();
 
         const getActiveTab = () => tabs.find(t => t.id === activeTabId);
 
@@ -718,21 +779,19 @@
         async function initLibcurl() {
             if (libcurlReady) return;
             
-            const wispUrl = localStorage.getItem("proxServer") ?? DEFAULT_WISP;
+            const wispUrl = storage.getItem("proxServer") ?? DEFAULT_WISP;
             
-            // Wait for libcurl to be available (loaded via defer)
             while (typeof libcurl === 'undefined') {
                 await new Promise(r => setTimeout(r, 50));
             }
             
-            // Set the WebSocket proxy URL for libcurl
             libcurl.set_websocket(wispUrl);
             
             libcurlReady = true;
             console.log('libcurl.js initialized with Wisp server:', wispUrl);
         }
 
-        // ===== NEW TAB PAGE HTML =====
+        // ===== NEW TAB PAGE HTML (file:// safe - no localStorage) =====
         const NEW_TAB_HTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -744,7 +803,7 @@
         html, body {
             height: 100%; width: 100%;
             font-family: 'Nunito', sans-serif;
-            background-color: #1a1a1a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             background-position: center;
             background-repeat: no-repeat;
             background-attachment: fixed;
@@ -818,26 +877,11 @@
                 <div class="shortcut-icon"><img src="https://cdn.theorg.com/a250f7c7-8d93-487f-bc35-69a5e2145115_medium.jpg"></div>
                 <span class="shortcut-label">Pluto TV</span>
             </a>
-            <div id="customShortcuts" style="display: contents;"></div>
-            <div class="shortcut" id="uploadBtn">
-                <div class="shortcut-icon"><i class="fa-solid fa-image"></i></div>
-                <span class="shortcut-label">Set BG</span>
-            </div>
-            <div class="shortcut" id="resetBtn">
-                <div class="shortcut-icon"><i class="fa-solid fa-rotate-left"></i></div>
-                <span class="shortcut-label">Reset BG</span>
-            </div>
-            <div class="shortcut" id="addShortcut">
-                <div class="shortcut-icon"><i class="fa-solid fa-plus"></i></div>
-                <span class="shortcut-label">Add</span>
-            </div>
         </div>
         <div class="quote" id="quote"></div>
     </div>
-    <input type="file" id="bgUpload" accept="image/*" style="display: none;">
     <script>
         const $ = s => document.querySelector(s);
-        const bgUpload = $('#bgUpload');
         
         const nav = url => {
             if (window.parent !== window) {
@@ -846,15 +890,6 @@
                 window.location.href = url;
             }
         };
-
-        function loadBackground() {
-            const savedBg = localStorage.getItem('customBg');
-            document.body.style.backgroundImage = savedBg ? 'url(' + savedBg + ')' : '';
-            if (!savedBg) {
-                document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }
-        }
-        loadBackground();
 
         function updateClock() {
             const now = new Date();
@@ -872,57 +907,11 @@
 
         $('#shortcuts').onclick = e => {
             const shortcut = e.target.closest('.shortcut[data-url]');
-            const addBtn = e.target.closest('#addShortcut');
-            const uploadBtn = e.target.closest('#uploadBtn');
-            const resetBtn = e.target.closest('#resetBtn');
-
             if (shortcut) nav(shortcut.dataset.url);
-            else if (uploadBtn) bgUpload.click();
-            else if (resetBtn) { localStorage.removeItem('customBg'); loadBackground(); }
-            else if (addBtn) {
-                const name = prompt("Shortcut name:");
-                let url = name ? prompt("URL:") : null;
-                if (url) {
-                    if (!url.startsWith('http')) url = 'https://' + url;
-                    const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || '[]');
-                    shortcuts.push({ name, url });
-                    localStorage.setItem('shortcuts', JSON.stringify(shortcuts));
-                    renderCustom();
-                }
-            }
         };
 
-        bgUpload.onchange = e => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const imgData = event.target.result;
-                    document.body.style.backgroundImage = 'url(' + imgData + ')';
-                    document.body.style.backgroundColor = '#1a1a1a';
-                    try { localStorage.setItem('customBg', imgData); }
-                    catch (err) { alert("Image too large!"); }
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-
-        function renderCustom() {
-            const container = $('#customShortcuts');
-            container.innerHTML = '';
-            const shortcuts = JSON.parse(localStorage.getItem('shortcuts') || '[]');
-            shortcuts.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'shortcut';
-                div.dataset.url = s.url;
-                div.innerHTML = '<div class="shortcut-icon"><i class="fa-solid fa-link"></i></div><span class="shortcut-label">' + s.name + '</span>';
-                container.appendChild(div);
-            });
-        }
-
-        const quotes = ["Gaming Paradise", "Made by Bubber", "Bro just do your work", "Best Browser awarded by me", "almost as good as GUST"];
+        const quotes = ["Gaming Paradise", "Made by Bubber", "Bro just do your work", "Best Browser awarded by me"];
         $('#quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
-        renderCustom();
     <\/script>
 </body>
 </html>`;
@@ -1034,6 +1023,7 @@
                 historyIndex: -1
             };
 
+            // Use blob URL for new tab
             const blob = new Blob([NEW_TAB_HTML], { type: 'text/html' });
             frame.src = URL.createObjectURL(blob);
 
@@ -1118,6 +1108,7 @@
             if (bar && tab) bar.value = tab.url || "";
         }
 
+        // FIXED: Use blob URLs instead of contentDocument manipulation
         async function loadUrl(url, addToHistory = true) {
             const tab = getActiveTab();
             if (!tab) return;
@@ -1128,7 +1119,6 @@
             updateLoadingBar(tab, 20);
             
             try {
-                // Use libcurl.fetch to get the content through the Wisp proxy
                 const response = await libcurl.fetch(url);
                 const contentType = response.headers.get('content-type') || '';
                 
@@ -1142,10 +1132,9 @@
                     html = html.replace(/(href|src)=["']\/([^"']*)["']/g, `$1="${baseUrl.origin}/$2"`);
                     html = html.replace(/(href|src)=["'](?!https?:\/\/)([^"']*)["']/g, `$1="${baseUrl.origin}/$2"`);
                     
-                    // Inject a script to intercept navigation
+                    // Inject proxy script
                     const proxyScript = `
                         <script>
-                            // Override fetch to use parent's libcurl
                             window.fetch = function(url, options) {
                                 if (window.parent !== window && window.parent.libcurl) {
                                     return window.parent.libcurl.fetch(url, options);
@@ -1153,16 +1142,14 @@
                                 return fetch(url, options);
                             };
                             
-                            // Intercept link clicks
                             document.addEventListener('click', function(e) {
                                 const link = e.target.closest('a');
-                                if (link && link.href && !link.href.startsWith('javascript:')) {
+                                if (link && link.href && !link.href.startsWith('javascript:') && !link.href.startsWith('blob:')) {
                                     e.preventDefault();
                                     window.parent.postMessage({ type: 'navigate', url: link.href }, '*');
                                 }
                             });
                             
-                            // Intercept form submissions
                             document.addEventListener('submit', function(e) {
                                 const form = e.target;
                                 if (form.action) {
@@ -1176,28 +1163,23 @@
                         <\/script>
                     `;
                     
-                    // Insert before closing </head> or at the beginning
                     if (html.includes('</head>')) {
                         html = html.replace('</head>', proxyScript + '</head>');
                     } else {
                         html = proxyScript + html;
                     }
                     
-                    // Write to iframe
-                    const doc = tab.frame.contentDocument || tab.frame.contentWindow.document;
-                    doc.open();
-                    doc.write(html);
-                    doc.close();
+                    // Create blob URL instead of using contentDocument
+                    const blob = new Blob([html], { type: 'text/html' });
+                    const blobUrl = URL.createObjectURL(blob);
+                    tab.frame.src = blobUrl;
                     
-                    // Update tab info
-                    try {
-                        tab.title = doc.title || baseUrl.hostname;
-                    } catch {
-                        tab.title = baseUrl.hostname;
-                    }
+                    // Extract title from HTML for tab
+                    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+                    tab.title = titleMatch ? titleMatch[1].trim() : baseUrl.hostname;
                     tab.favicon = 'https://www.google.com/s2/favicons?domain=' + baseUrl.hostname + '&sz=32';
                 } else {
-                    // For non-HTML content, create a simple viewer or download
+                    // For non-HTML content, create blob and load
                     const blob = await response.blob();
                     const objectUrl = URL.createObjectURL(blob);
                     tab.frame.src = objectUrl;
@@ -1266,7 +1248,7 @@
         function renderServerList() {
             const list = document.getElementById('server-list');
             list.innerHTML = '';
-            const currentUrl = localStorage.getItem('proxServer') ?? DEFAULT_WISP;
+            const currentUrl = storage.getItem('proxServer') ?? DEFAULT_WISP;
             const allWisps = [...WISP_SERVERS, ...getStoredWisps()];
 
             allWisps.forEach((server, index) => {
@@ -1292,7 +1274,7 @@
                 checkServerHealth(server.url, item);
             });
 
-            const isAutoswitch = localStorage.getItem('wispAutoswitch') !== 'false';
+            const isAutoswitch = storage.getItem('wispAutoswitch', 'true') !== 'false';
             const toggleContainer = document.createElement('div');
             toggleContainer.className = 'wisp-option';
             toggleContainer.style.cssText = 'margin-top: 10px; cursor: default;';
@@ -1305,7 +1287,7 @@
                 </div>`;
             toggleContainer.onclick = () => {
                 const newState = !isAutoswitch;
-                localStorage.setItem('wispAutoswitch', newState);
+                storage.setItem('wispAutoswitch', newState);
                 document.getElementById('autoswitch-toggle').classList.toggle('active', newState);
                 notify('success', 'Settings Saved', 'Autoswitch ' + (newState ? 'Enabled' : 'Disabled'));
                 location.reload();
@@ -1328,7 +1310,7 @@
             }
             const newServer = { name: 'Custom ' + (customWisps.length + 1), url };
             customWisps.push(newServer);
-            localStorage.setItem('customWisps', JSON.stringify(customWisps));
+            storage.setObject('customWisps', customWisps);
             setWisp(url);
             input.value = '';
         }
@@ -1336,8 +1318,8 @@
         window.deleteCustomWisp = function(urlToDelete) {
             if (!confirm("Remove this server?")) return;
             let customWisps = getStoredWisps().filter(w => w.url !== urlToDelete);
-            localStorage.setItem('customWisps', JSON.stringify(customWisps));
-            if (localStorage.getItem('proxServer') === urlToDelete) setWisp(DEFAULT_WISP);
+            storage.setObject('customWisps', customWisps);
+            if (storage.getItem('proxServer') === urlToDelete) setWisp(DEFAULT_WISP);
             else renderServerList();
         };
 
@@ -1361,8 +1343,8 @@
         }
 
         function setWisp(url) {
-            const oldUrl = localStorage.getItem('proxServer');
-            localStorage.setItem('proxServer', url);
+            const oldUrl = storage.getItem('proxServer');
+            storage.setItem('proxServer', url);
             if (oldUrl !== url) {
                 const serverName = [...WISP_SERVERS, ...getStoredWisps()].find(s => s.url === url)?.name ?? 'Custom Server';
                 notify('success', 'Proxy Changed', 'Switching to ' + serverName + '...');
