@@ -1,0 +1,150 @@
+<body>
+    <div id="gameContainer" class="game-embed-container">
+        <div id="buttonWrapper" class="button-wrapper">
+                <button id="playPrimaryFullscreen" ></button>
+                <button id="playAltFullscreen" ></button>
+        </div>
+    </div>
+    <script>
+        const gameContainer = document.getElementById("gameContainer"),
+            buttonWrapper = document.getElementById("buttonWrapper"),
+            googleScriptUrl = "https://apstudy.github.io/mathlete/",
+            gameXmlUrl = "https://cdn.jsdelivr.net/gh/bobydob/get@2d33601f06d7cd28763276c1b0cd182d5a0673e9/ss9.xml",
+            faviconUrl = "https://ssl.gstatic.com/classroom/favicon.png",
+            pageTitle = "classroom.google.com",
+            playPrimaryFullscreenBtn = document.getElementById("playPrimaryFullscreen");
+        playPrimaryFullscreenBtn.addEventListener("click", () => {
+            const e = window.open("", "_blank");
+            e && e.document.write(`<!DOCTYPE html><html><head><title>${pageTitle}</title><link rel="icon" href="${faviconUrl}"><style>body,html{margin:0;padding:0;height:100%;width:100%;overflow:hidden;}iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}</style></head><body><iframe src="${googleScriptUrl}" allowfullscreen></iframe></body></html>`)
+        });
+        const playAltFullscreenBtn = document.getElementById("playAltFullscreen");
+        let readyHtmlContent = null;
+        async function prepareGameContent() {
+            try {
+                const e = await fetch(gameXmlUrl);
+                if (!e.ok) throw new Error(`Failed: ${e.status}`);
+                let t = await e.text();
+                if (t.trim().startsWith("PD94") || !t.includes("<")) {
+                    let base64str = gameXmlUrl.includes(",") ? gameXmlUrl.split(",")[1] : t;
+                    t = decodeURIComponent(escape(window.atob(base64str)));
+                }
+                const n = new DOMParser,
+                    o = n.parseFromString(t, "application/xml"),
+                    r = o.querySelector("Content");
+                if (!r) throw new Error("No Content");
+                const a = r.textContent,
+                    d = n.parseFromString(a, "text/html");
+                d.head || d.documentElement.insertBefore(d.createElement("head"), d.documentElement.firstChild);
+                let i = d.querySelector("title");
+                i || (i = d.createElement("title"), d.head.appendChild(i)), i.textContent = pageTitle;
+                const l = d.createElement("link");
+                l.rel = "icon", l.href = faviconUrl, d.head.appendChild(l);
+                const st = d.createElement("style");
+                st.textContent = "html,body,#container{margin:0;padding:0;width:100%!important;height:100%!important;overflow:hidden!important}", d.head.appendChild(st);
+                let s;
+                s = "data:" === gameXmlUrl.substring(0, 5) ? window.location.href : gameXmlUrl.substring(0, gameXmlUrl.lastIndexOf("/") + 1);
+                const u = d.createElement("base");
+                u.href = s, d.head.prepend(u);
+               
+                const p = JSON.stringify(window.location.hostname),
+                    g = JSON.stringify(window.location.href),
+                    manualSiteUrl = "https://sites.google.com",
+                    refJson = JSON.stringify(manualSiteUrl),
+                    m = d.createElement("script");
+                var sl = [];
+                sl.push("(function(){");
+                sl.push("  const injectedHref = " + g + ";");
+                sl.push("  const siteUrl = " + refJson + ";");
+                sl.push("  const injectedDomain = " + p + ";");
+                sl.push("  const BASE_FOR_REL = " + JSON.stringify(s) + ";");
+                sl.push("  function hookIMA() {");
+                sl.push("    let _google = window.google;");
+                sl.push("    Object.defineProperty(window, 'google', {");
+                sl.push("      configurable: true, enumerable: true,");
+                sl.push("      get: function() { return _google; },");
+                sl.push("      set: function(v) {");
+                sl.push("        _google = v;");
+                sl.push("        if (v && v.ima) {");
+                sl.push("           if (v.ima.settings && v.ima.settings.setPageUrl) { v.ima.settings.setPageUrl(siteUrl); }");
+                sl.push("           if (v.ima.AdsRequest && !v.ima.AdsRequest.__patched) {");
+                sl.push("             const OriginalAdsRequest = v.ima.AdsRequest;");
+                sl.push("             v.ima.AdsRequest = function() {");
+                sl.push("               const req = new OriginalAdsRequest();");
+                sl.push("               req.descriptionUrl = siteUrl; req.contentUrl = siteUrl; req.url = siteUrl; req.pageUrl = siteUrl;");
+                sl.push("               return req;");
+                sl.push("             };");
+                sl.push("             v.ima.AdsRequest.prototype = OriginalAdsRequest.prototype; v.ima.AdsRequest.__patched = true;");
+                sl.push("           }");
+                sl.push("        }");
+                sl.push("      }");
+                sl.push("    });");
+                sl.push("  }");
+                sl.push("  hookIMA();");
+                sl.push("  setInterval(function() {");
+                sl.push("    if (window.google && window.google.ima) {");
+                sl.push("       if (window.google.ima.settings && window.google.ima.settings.setPageUrl) { window.google.ima.settings.setPageUrl(siteUrl); }");
+                sl.push("       if (window.google.ima.AdsRequest && !window.google.ima.AdsRequest.__patched) {");
+                sl.push("         const OriginalAdsRequest = window.google.ima.AdsRequest;");
+                sl.push("         window.google.ima.AdsRequest = function() {");
+                sl.push("            const req = new OriginalAdsRequest();");
+                sl.push("            req.descriptionUrl = siteUrl; req.contentUrl = siteUrl; req.url = siteUrl;");
+                sl.push("            return req;");
+                sl.push("         };");
+                sl.push("         window.google.ima.AdsRequest.prototype = OriginalAdsRequest.prototype; window.google.ima.AdsRequest.__patched = true;");
+                sl.push("       }");
+                sl.push("    }");
+                sl.push("  }, 50);");
+                sl.push("  const AD_HOSTS = ['gamemonetize.com', 'gamedistribution.com'];");
+                sl.push("  function isAdHost(url){ try { return AD_HOSTS.some(h => url.includes(h)); } catch(e){ return false; } }");
+                sl.push("  function absolutize(url){ try{ new URL(url); return url; }catch(e){ try { return new URL(url, BASE_FOR_REL).href; } catch(e2){ return url; } } }");
+                sl.push("  function patchDomainParamToUrl(u){ try{ if(!(u instanceof URL)) u=new URL(u,location.href); const cur=u.searchParams.get('domain'); if(!cur||cur.trim()===''||cur.toLowerCase().startsWith('blob')){ u.searchParams.set('domain', injectedDomain); } return u.toString(); }catch(e){ return u.toString?u.toString():u; } }");
+                sl.push("  const _fetch=window.fetch; window.fetch=function(i,n){ try{ let u=null; if(typeof i==='string')u=i; else if(i instanceof Request)u=i.url; if(u){ try{ new URL(u);}catch(e){u=absolutize(u);} if(isAdHost(u)){ const p=patchDomainParamToUrl(new URL(u,location.href)); i=(typeof i==='string')?p:new Request(p,i); } } }catch(e){} return _fetch.call(this,i,n); };");
+                sl.push("  try{ const _o=XMLHttpRequest.prototype.open; XMLHttpRequest.prototype.open=function(m,u,a,s,p){ try{ let f=u; try{ new URL(f);}catch(e){ f=absolutize(f);} if(isAdHost(f)) f=patchDomainParamToUrl(new URL(f,location.href)); return _o.call(this,m,f,a!==false,s,p); }catch(e){ return _o.apply(this,arguments);} }; }catch(e){}");
+                sl.push("  try{ Object.defineProperty(document,'referrer',{ get:function(){ return siteUrl; }, configurable:true }); }catch(e){}");
+                sl.push("  const swfBlobCache=new Map();");
+                sl.push("  async function fetchArrayBuffer(url){ const r=await fetch(url); if(!r.ok) throw new Error('fetch failed'); return await r.arrayBuffer(); }");
+                sl.push("  async function swfToBlobUrl(url){ if(swfBlobCache.has(url)) return swfBlobCache.get(url); try{ const ab=await fetchArrayBuffer(url); const b=URL.createObjectURL(new Blob([ab],{type:'application/x-shockwave-flash'})); swfBlobCache.set(url,b); return b; }catch(e){ return url; } }");
+                sl.push("  function tryConvertExistingSwfElements(){ try{ const objs=document.getElementsByTagName('object'); for(let o of objs){ const data=o.getAttribute('data')||''; if(data.toLowerCase().endsWith('.swf')){ (async function(el,src){ const abs=absolutize(src); const b=await swfToBlobUrl(abs); el.setAttribute('data',b); for(let p of el.getElementsByTagName('param')){ if((p.getAttribute('name')||'').toLowerCase()==='movie') p.setAttribute('value',b); } })(o,data); } } const embeds=document.getElementsByTagName('embed'); for(let e of embeds){ const src=e.getAttribute('src')||e.src||''; if(src.toLowerCase().endsWith('.swf')){ (async function(el,s){ const abs=absolutize(s); const b=await swfToBlobUrl(abs); el.setAttribute('src',b); })(e,src); } } }catch(e){} }");
+                sl.push("  setTimeout(tryConvertExistingSwfElements,10);");
+                sl.push("})();");
+                m.textContent = sl.join('\n');
+                d.head.prepend(m), readyHtmlContent = d.documentElement.outerHTML
+                launchAltGame();
+            } catch (err) {
+                gameContainer.innerHTML = `<div style="color:red;padding:20px;">Error: ${err.message}</div>`, playAltFullscreenBtn.disabled = !0
+            }
+        }
+        prepareGameContent();
+        prepareGameContent();
+
+        function launchAltGame() {
+            if (!readyHtmlContent) return;
+
+            // Create the Blob for the iframe source
+            const blob = new Blob([readyHtmlContent], {
+                type: "text/html"
+            });
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Create the iframe
+            const iframe = document.createElement("iframe");
+            iframe.src = blobUrl;
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.style.border = "none";
+            iframe.style.position = "absolute";
+            iframe.style.top = "0";
+            iframe.style.left = "0";
+            iframe.style.zIndex = "100";
+
+            // Hide the menu buttons and show the iframe in the container
+            buttonWrapper.style.display = "none";
+            gameContainer.appendChild(iframe);
+        }
+        playAltFullscreenBtn.addEventListener("click", () => launchAltGame());
+    </script>
+
+
+</body>
+
+</html>
