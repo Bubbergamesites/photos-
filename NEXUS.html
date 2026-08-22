@@ -229,19 +229,19 @@
                     <div class="flex nav">
                         <button id="back-btn" title="Back (Alt+Left)" disabled=""><i class="fa-solid fa-chevron-left"></i></button>
                         <button id="fwd-btn" title="Forward (Alt+Right)" disabled=""><i class="fa-solid fa-chevron-right"></i></button>
-                        <button id="reload-btn" title="Reload (Ctrl+R)"><i class="fa-solid fa-rotate-right"></i></button>
+                        <button id="reload-btn" title="Reload (Alt+R)"><i class="fa-solid fa-rotate-right"></i></button>
                         <div class="address-wrapper">
-                            <input class="bar" id="address-bar" autocomplete="off" placeholder="Search or enter URL (Ctrl+L)">
+                            <input class="bar" id="address-bar" autocomplete="off" placeholder="Search or enter URL (Alt+L)">
                             <div class="address-actions">
                                 <button class="address-btn" id="bookmark-btn" title="Bookmark Page"><i class="fa-regular fa-star"></i></button>
                                 <button class="address-btn" id="home-btn-nav" title="Home"><i class="fa-solid fa-house"></i></button>
                             </div>
                         </div>
-                        <button id="downloads-btn" title="Downloads (Ctrl+J)"><i class="fa-solid fa-download"></i></button>
-                        <button id="history-btn" title="History (Ctrl+H)"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                        <button id="downloads-btn" title="Downloads (Alt+J)"><i class="fa-solid fa-download"></i></button>
+                        <button id="history-btn" title="History (Alt+H)"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         <button id="shortcuts-btn" title="Keyboard Shortcuts"><i class="fa-solid fa-keyboard"></i></button>
                         <button id="devtools-btn" title="DevTools (F12)"><i class="fa-solid fa-code"></i></button>
-                        <button id="settings-btn" title="Settings (Ctrl+,)"><i class="fa-solid fa-gear"></i></button>
+                        <button id="settings-btn" title="Settings (Alt+,)"><i class="fa-solid fa-gear"></i></button>
                     </div>
                     <div class="loading-bar-container"><div class="loading-bar" id="loading-bar" style="width: 0%; opacity: 0;"></div></div>
                     <div class="iframe-container" id="iframe-container">
@@ -404,14 +404,14 @@
                 <button class="close-btn" onclick="closeShortcuts()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-content">
-                <div class="shortcut-row"><span>New Tab</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">T</span></div></div>
-                <div class="shortcut-row"><span>Close Tab</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">W</span></div></div>
-                <div class="shortcut-row"><span>Next Tab</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Tab</span></div></div>
-                <div class="shortcut-row"><span>Previous Tab</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Shift</span><span class="shortcut-key">Tab</span></div></div>
-                <div class="shortcut-row"><span>Reload</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">R</span></div></div>
-                <div class="shortcut-row"><span>Focus Address Bar</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">L</span></div></div>
-                <div class="shortcut-row"><span>Downloads</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">J</span></div></div>
-                <div class="shortcut-row"><span>Settings</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">,</span></div></div>
+                <div class="shortcut-row"><span>New Tab</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">T</span></div></div>
+                <div class="shortcut-row"><span>Close Tab</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">W</span></div></div>
+                <div class="shortcut-row"><span>Next Tab</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">Tab</span></div></div>
+                <div class="shortcut-row"><span>Previous Tab</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">Shift</span><span class="shortcut-key">Tab</span></div></div>
+                <div class="shortcut-row"><span>Reload</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">R</span></div></div>
+                <div class="shortcut-row"><span>Focus Address Bar</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">L</span></div></div>
+                <div class="shortcut-row"><span>Downloads</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">J</span></div></div>
+                <div class="shortcut-row"><span>Settings</span><div class="shortcut-keys"><span class="shortcut-key">Alt</span><span class="shortcut-key">,</span></div></div>
                 <div class="shortcut-row"><span>Fullscreen</span><div class="shortcut-keys"><span class="shortcut-key">F11</span></div></div>
             </div>
         </div>
@@ -2516,7 +2516,7 @@ return api;
                 return;
             }
             
-            const ctrl = e.ctrlKey || e.metaKey;
+            const ctrl = e.altKey || e.metaKey;
             
             if (ctrl) {
                 switch(e.key.toLowerCase()) {
@@ -2649,19 +2649,19 @@ return api;
                     <div class="flex nav">
                         <button id="back-btn" title="Back (Alt+Left)"><i class="fa-solid fa-chevron-left"></i></button>
                         <button id="fwd-btn" title="Forward (Alt+Right)"><i class="fa-solid fa-chevron-right"></i></button>
-                        <button id="reload-btn" title="Reload (Ctrl+R)"><i class="fa-solid fa-rotate-right"></i></button>
+                        <button id="reload-btn" title="Reload (Alt+R)"><i class="fa-solid fa-rotate-right"></i></button>
                         <div class="address-wrapper">
-                            <input class="bar" id="address-bar" autocomplete="off" placeholder="Search or enter URL (Ctrl+L)">
+                            <input class="bar" id="address-bar" autocomplete="off" placeholder="Search or enter URL (Alt+L)">
                             <div class="address-actions">
                                 <button class="address-btn" id="bookmark-btn" title="Bookmark Page"><i class="fa-regular fa-star"></i></button>
                                 <button class="address-btn" id="home-btn-nav" title="Home"><i class="fa-solid fa-house"></i></button>
                             </div>
                         </div>
-                        <button id="downloads-btn" title="Downloads (Ctrl+J)"><i class="fa-solid fa-download"></i></button>
-                        <button id="history-btn" title="History (Ctrl+H)"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                        <button id="downloads-btn" title="Downloads (Alt+J)"><i class="fa-solid fa-download"></i></button>
+                        <button id="history-btn" title="History (Alt+H)"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         <button id="shortcuts-btn" title="Keyboard Shortcuts"><i class="fa-solid fa-keyboard"></i></button>
                         <button id="devtools-btn" title="DevTools (F12)"><i class="fa-solid fa-code"></i></button>
-                        <button id="settings-btn" title="Settings (Ctrl+,)"><i class="fa-solid fa-gear"></i></button>
+                        <button id="settings-btn" title="Settings (Alt+,)"><i class="fa-solid fa-gear"></i></button>
                     </div>
                     <div class="loading-bar-container"><div class="loading-bar" id="loading-bar"></div></div>
                     <div class="iframe-container" id="iframe-container">
