@@ -3152,6 +3152,94 @@ return api;
                 storage.setObject('history', []);
             }
         });
+        // Hash navigation with query support
+(function() {
+    const SEARCH_URL = 'https://search.brave.com/search?q=';
+    
+    function waitForProxy(callback) {
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        function check() {
+            attempts++;
+            const navFn = window.navigate || window.go || window.loadUrl || 
+                       window.proxyNavigate || window.openUrl ||
+                       (window.Module && window.Module.navigate) ||
+                       (window.libcurl && window.libcurl.navigate);
+            
+            if (navFn) {
+                callback(navFn);
+                return;
+            }
+            
+            const addressBar = document.getElementById('address-bar');
+            if (addressBar && attempts > 5) {
+                callback(null, addressBar);
+                return;
+            }
+            
+            if (attempts < maxAttempts) setTimeout(check, 100);
+        }
+        check();
+    }
+    
+    function doNavigation(url) {
+        waitForProxy(function(navFn, addressBar) {
+            if (navFn) {
+                navFn(url);
+            } else if (addressBar) {
+                addressBar.value = url;
+                addressBar.focus();
+                ['change', 'input'].forEach(t => {
+                    addressBar.dispatchEvent(new Event(t, { bubbles: true }));
+                });
+                setTimeout(() => {
+                    const evt = document.createEvent('KeyboardEvent');
+                    evt.initKeyboardEvent('keydown', true, true, window, 'Enter', 0, false, false, false, false);
+                    document.activeElement.dispatchEvent(evt);
+                }, 100);
+            }
+        });
+    }
+    
+    function handleHash() {
+        const hash = window.location.hash.substring(1);
+        if (!hash) return;
+        
+        let decoded = decodeURIComponent(hash);
+        let finalUrl;
+        
+        // Check if it's a URL or search query
+        const hasSpace = decoded.includes(' ');
+        const looksLikeUrl = /^(https?:\/\/)?([a-zA-Z0-9][a-zA-Z0-9-]*\.)+[a-zA-Z]{2,}/i.test(decoded);
+        
+        if (!hasSpace && looksLikeUrl) {
+            // It's a URL
+            if (!decoded.match(/^https?:\/\//i)) {
+                finalUrl = 'https://' + decoded;
+            } else {
+                finalUrl = decoded;
+            }
+        } else {
+            // It's a search query
+            finalUrl = SEARCH_URL + encodeURIComponent(decoded);
+        }
+        
+        console.log('Navigating to:', finalUrl);
+        doNavigation(finalUrl);
+    }
+    
+    window.addEventListener('hashchange', handleHash);
+    
+    if (window.location.hash) {
+        const start = () => setTimeout(handleHash, 200);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', start);
+        } else {
+            start();
+        }
+    }
+})();
     </script>
 
 </div><style>:root, html, body { height: auto !important; max-height: 5000px !important; overflow-x: hidden !important; overflow-y: auto !important; background: transparent !important; } </style><script>(function() {var lastHeight = 0;var debounceTimer = null;function reportHeight() {var rect = document.body.getBoundingClientRect();var h = Math.ceil(rect.height);if (h !== lastHeight && h > 0) {lastHeight = h;window.parent.postMessage({ type: "html-sandbox-height", height: h }, "*");}}new ResizeObserver(function() {clearTimeout(debounceTimer);debounceTimer = setTimeout(reportHeight, 100);}).observe(document.body);window.addEventListener("load", function() {window.parent.postMessage({ type: "html-sandbox-ready" }, "*");});document.fonts && document.fonts.ready.then(function() {reportHeight();});})();</script></body></html>
