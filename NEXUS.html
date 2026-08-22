@@ -75,12 +75,12 @@
         --accent-glow: rgba(255, 107, 157, 0.2);
         }
         [data-theme="neon"] {
-        --bg: #ff4800;
+        --bg: #04D9FF;
         --surface: #1a1a2e;
         --surface-hover: #252542;
-        --border: #2d2d5a;
+        --border: #ff5f1f;
         --text: #f0f0ff;
-        --accent: #00f0ff;
+        --accent: #f6ff00;
         --accent-glow: rgba(0, 240, 255, 0.3);
         }
 
@@ -194,7 +194,7 @@
         .theme-forest { background: linear-gradient(135deg, #052e16, #064e3b); }
         .theme-ocean { background: linear-gradient(135deg, #0c1a2d, #1a2b4a); }
         .theme-sunset { background: linear-gradient(135deg, #1a0f1a, #2d1b2d); }
-        .theme-neon { background: linear-gradient(135deg, #ff5f1f, #ff4800); border: 1px solid #00f0ff; }
+        .theme-neon { background: linear-gradient(135deg, #04D9FF, #1F51FF); border: 1px solid #00f0ff; }
         .theme-coffee { background: linear-gradient(135deg, #1a1410, #2d241a); }
         .color-picker-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
         .color-picker-item { display: flex; flex-direction: column; gap: 4px; }
@@ -287,21 +287,13 @@
                     </div>
                     <div class="loading-bar-container"><div class="loading-bar" id="loading-bar" style="width: 0%; opacity: 0;"></div></div>
                     <div class="iframe-container" id="iframe-container">
-                        <div id="loading" class="message-container" style="display: none;">
-                            <div class="message-content">
-                                <div class="spinner"></div>
-                                <h1 id="loading-title">Connecting</h1>
-                                <p id="loading-url">https://github.com</p>
-                                <button id="skip-btn" style="display: none;">Skip</button>
-                            </div>
-                        </div>
                         <div id="error" class="message-container" style="display: none;">
                             <div class="message-content">
                                 <h1>Connection Error</h1>
                                 <p id="error-message">An error occurred.</p>
                             </div>
                         </div>
-                    <iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms" src="blob:https://989ec0-agenti-xayoxde.prod.veniceaisandbox.com/69ff8c70-2a1f-4791-9666-8ce9750544c2" class="hidden" style="width: 100%; height: 100%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; position: absolute;"></iframe><iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms" src="blob:https://989ec0-agenti-xayoxde.prod.veniceaisandbox.com/94003d18-5a39-4d82-968b-36e47e4596e6" style="width: 100%; height: 100%; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; position: absolute;"></iframe></div>
+                    </div>
                 </div></div>
     <div class="toast-container" id="toast-container"></div>
     <div class="context-menu" id="context-menu" style="display: none;">
@@ -2691,7 +2683,6 @@ return api;
             root.innerHTML = `
                 <div class="browser-container">
                     <div class="flex tabs" id="tabs-container"></div>
-                    <div class="bookmarks-bar" id="bookmarks-bar"></div>
                     <div class="flex nav">
                         <button id="back-btn" title="Back (Alt+Left)"><i class="fa-solid fa-chevron-left"></i></button>
                         <button id="fwd-btn" title="Forward (Alt+Right)"><i class="fa-solid fa-chevron-right"></i></button>
@@ -2709,6 +2700,7 @@ return api;
                         <button id="devtools-btn" title="DevTools (F12)"><i class="fa-solid fa-code"></i></button>
                         <button id="settings-btn" title="Settings (Alt+,)"><i class="fa-solid fa-gear"></i></button>
                     </div>
+                    <div class="bookmarks-bar" id="bookmarks-bar"></div>
                     <div class="loading-bar-container"><div class="loading-bar" id="loading-bar"></div></div>
                     <div class="iframe-container" id="iframe-container">
                         <div id="loading" class="message-container" style="display: none;">
