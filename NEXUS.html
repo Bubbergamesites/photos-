@@ -3232,7 +3232,7 @@ return api;
     window.addEventListener('hashchange', handleHash);
     
     if (window.location.hash) {
-        const start = () => setTimeout(handleHash, 200);
+        const start = () => setTimeout(handleHash, 2000);
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', start);
         } else {
