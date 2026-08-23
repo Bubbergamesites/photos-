@@ -1,7 +1,78 @@
 <html data-host-mode="dark" lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><script>Object.defineProperty(document, "cookie", {get: function() { return ""; },set: function() {},configurable: false});</script><script type="module">(async()=>{if(typeof FileSystemFileHandle!=="undefined"&&"createWritable"in FileSystemFileHandle.prototype)return;if(!navigator.storage?.getDirectory)return;try{const{createWorker}=await import("https://esm.sh/opfs-worker");const w=await createWorker();class W{constructor(p){this.p=p;this.c=[];this.x=false}write(d){if(this.x)throw new DOMException("closed","InvalidStateError");if(typeof d==="object"&&"type"in d&&!(d instanceof Blob)&&!(d instanceof ArrayBuffer)){if(d.type==="write")this.c.push(d.data);else if(d.type==="truncate")this.c=[];return}this.c.push(d)}async close(){if(this.x)return;const b=new Blob(this.c);await w.writeFile(this.p,new Uint8Array(await b.arrayBuffer()));this.x=true;this.c=[]}abort(){this.x=true;this.c=[]}}const pF=(h,p)=>new Proxy(h,{get:(t,k)=>k==="createWritable"?async()=>new W(p):typeof t[k]==="function"?t[k].bind(t):t[k]});const pD=(h,p)=>new Proxy(h,{get:(t,k)=>{if(k==="getFileHandle")return async(n,o)=>pF(await t.getFileHandle(n,o),(p+"/"+n).replace(//+/g,"/"));if(k==="getDirectoryHandle")return async(n,o)=>pD(await t.getDirectoryHandle(n,o),(p+"/"+n).replace(//+/g,"/"));return typeof t[k]==="function"?t[k].bind(t):t[k]}});const og=navigator.storage.getDirectory.bind(navigator.storage);navigator.storage.getDirectory=async function(){return pD(await og.call(this),"/")};}catch(e){console.warn("[OPFS]",e)}})();</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><style>:root { --host-bg: rgb(8, 15, 22); --host-fg: rgb(238, 237, 228); --host-fg-muted: rgb(106, 114, 130); --host-card: rgba(255, 255, 255, 0.05); --host-card-fg: rgb(238, 237, 228); --host-input: rgba(255, 255, 255, 0.024); --host-muted: rgba(255, 255, 255, 0.05); --host-border: rgba(255, 255, 255, 0.05); --host-border-hover: rgba(255, 255, 255, 0.1); --host-primary: rgb(18, 92, 161); --host-secondary: rgba(255, 255, 255, 0.05); --host-secondary-fg: rgb(255, 255, 255); --host-success: #22c55e; --host-error: #ef4444; } * { box-sizing: border-box; margin: 0; padding: 0; } :root, html, body { width: 100%; max-width: 100%; height: auto; overflow-x: hidden; overflow-y: visible; background: transparent; font-family: Inter, system-ui, -apple-system, sans-serif; } #sandbox-content { width: 100%; } @media (max-width: 640px) { :where(#sandbox-content svg, #sandbox-content img) { max-width: 100%; height: auto; } } </style></head><body><div id="sandbox-content">
-
-
-    <meta charset="UTF-8">
+<script>
+// Capture hash immediately before anything else processes it
+(function() {
+    const initialHash = window.location.hash;
+    
+    // If there's a hash, remove it from URL immediately to prevent early processing
+    if (initialHash && initialHash.length > 1) {
+        window.__pendingHash__ = initialHash.substring(1);
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    
+    function waitForLibcurl(callback) {
+        const check = () => {
+            if (typeof libcurl !== 'undefined' && libcurl.ready) {
+                callback();
+            } else if (typeof libcurl !== 'undefined' && typeof libcurl.load_wasm === 'function') {
+                libcurl.load_wasm().then(() => callback()).catch(() => setTimeout(check, 50));
+            } else {
+                setTimeout(check, 50);
+            }
+        };
+        check();
+    }
+    
+    function performNavigation(url) {
+        const addressBar = document.getElementById('address-bar');
+        if (addressBar) {
+            addressBar.value = url;
+            
+            // Try multiple navigation methods
+            if (typeof navigate === 'function') {
+                navigate(url);
+            } else if (typeof loadUrl === 'function') {
+                loadUrl(url);
+            } else if (typeof go === 'function') {
+                go(url);
+            } else {
+                // Simulate pressing Enter in the address bar
+                const event = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true
+                });
+                addressBar.dispatchEvent(event);
+                
+                // Also try clicking a go button if it exists
+                const goBtn = document.getElementById('go-btn') || document.querySelector('.nav button[type="submit"]');
+                if (goBtn) goBtn.click();
+            }
+        }
+    }
+    
+    if (window.__pendingHash__) {
+        waitForLibcurl(() => {
+            const target = decodeURIComponent(window.__pendingHash__).trim();
+            if (!target) return;
+            
+            const isUrl = /^(https?:\/\/|www\.)/i.test(target);
+            
+            if (isUrl) {
+                const url = target.startsWith('www.') ? 'https://' + target : target;
+                performNavigation(url);
+            } else {
+                const searchUrl = 'https://search.brave.com/search?q=' + encodeURIComponent(target);
+                performNavigation(searchUrl);
+            }
+            
+            delete window.__pendingHash__;
+        });
+    }
+})();
+</script>
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
     <link rel="icon" type="image/png" href="https://ssl.gstatic.com/classroom/favicon.png">
@@ -3152,94 +3223,6 @@ return api;
                 storage.setObject('history', []);
             }
         });
-        // Hash navigation with query support
-(function() {
-    const SEARCH_URL = 'https://search.brave.com/search?q=';
-    
-    function waitForProxy(callback) {
-        let attempts = 0;
-        const maxAttempts = 20;
-        
-        function check() {
-            attempts++;
-            const navFn = window.navigate || window.go || window.loadUrl || 
-                       window.proxyNavigate || window.openUrl ||
-                       (window.Module && window.Module.navigate) ||
-                       (window.libcurl && window.libcurl.navigate);
-            
-            if (navFn) {
-                callback(navFn);
-                return;
-            }
-            
-            const addressBar = document.getElementById('address-bar');
-            if (addressBar && attempts > 5) {
-                callback(null, addressBar);
-                return;
-            }
-            
-            if (attempts < maxAttempts) setTimeout(check, 100);
-        }
-        check();
-    }
-    
-    function doNavigation(url) {
-        waitForProxy(function(navFn, addressBar) {
-            if (navFn) {
-                navFn(url);
-            } else if (addressBar) {
-                addressBar.value = url;
-                addressBar.focus();
-                ['change', 'input'].forEach(t => {
-                    addressBar.dispatchEvent(new Event(t, { bubbles: true }));
-                });
-                setTimeout(() => {
-                    const evt = document.createEvent('KeyboardEvent');
-                    evt.initKeyboardEvent('keydown', true, true, window, 'Enter', 0, false, false, false, false);
-                    document.activeElement.dispatchEvent(evt);
-                }, 100);
-            }
-        });
-    }
-    
-    function handleHash() {
-        const hash = window.location.hash.substring(1);
-        if (!hash) return;
-        
-        let decoded = decodeURIComponent(hash);
-        let finalUrl;
-        
-        // Check if it's a URL or search query
-        const hasSpace = decoded.includes(' ');
-        const looksLikeUrl = /^(https?:\/\/)?([a-zA-Z0-9][a-zA-Z0-9-]*\.)+[a-zA-Z]{2,}/i.test(decoded);
-        
-        if (!hasSpace && looksLikeUrl) {
-            // It's a URL
-            if (!decoded.match(/^https?:\/\//i)) {
-                finalUrl = 'https://' + decoded;
-            } else {
-                finalUrl = decoded;
-            }
-        } else {
-            // It's a search query
-            finalUrl = SEARCH_URL + encodeURIComponent(decoded);
-        }
-        
-        console.log('Navigating to:', finalUrl);
-        doNavigation(finalUrl);
-    }
-    
-    window.addEventListener('hashchange', handleHash);
-    
-    if (window.location.hash) {
-        const start = () => setTimeout(handleHash, 2000);
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', start);
-        } else {
-            start();
-        }
-    }
-})();
     </script>
 
 </div><style>:root, html, body { height: auto !important; max-height: 5000px !important; overflow-x: hidden !important; overflow-y: auto !important; background: transparent !important; } </style><script>(function() {var lastHeight = 0;var debounceTimer = null;function reportHeight() {var rect = document.body.getBoundingClientRect();var h = Math.ceil(rect.height);if (h !== lastHeight && h > 0) {lastHeight = h;window.parent.postMessage({ type: "html-sandbox-height", height: h }, "*");}}new ResizeObserver(function() {clearTimeout(debounceTimer);debounceTimer = setTimeout(reportHeight, 100);}).observe(document.body);window.addEventListener("load", function() {window.parent.postMessage({ type: "html-sandbox-ready" }, "*");});document.fonts && document.fonts.ready.then(function() {reportHeight();});})();</script></body></html>
