@@ -393,14 +393,14 @@
                 <div class="settings-section">
                     <div class="section-title"><i class="fa-solid fa-palette"></i> Appearance</div>
                     <div class="theme-presets">
-                        <div class="theme-preset theme-dark active" data-theme="dark" data-name="Dark" onclick="setTheme('dark')"></div>
-                        <div class="theme-preset theme-light" data-theme="light" data-name="Light" onclick="setTheme('light')"></div>
-                        <div class="theme-preset theme-midnight" data-theme="midnight" data-name="Midnight" onclick="setTheme('midnight')"></div>
-                        <div class="theme-preset theme-forest" data-theme="forest" data-name="Forest" onclick="setTheme('forest')"></div>
-                        <div class="theme-preset theme-ocean" data-theme="ocean" data-name="Opera" onclick="setTheme('ocean')"></div>
-                        <div class="theme-preset theme-sunset" data-theme="sunset" data-name="Sunset" onclick="setTheme('sunset')"></div>
-                        <div class="theme-preset theme-neon" data-theme="neon" data-name="Neon" onclick="setTheme('neon')"></div>
-                        <div class="theme-preset theme-coffee" data-theme="coffee" data-name="Coffee" onclick="setTheme('coffee')"></div>
+                        <div class="theme-preset theme-dark active" data-theme="dark" data-name="Dark" onclick="setTheme('dark'); location.reload();"></div>
+                        <div class="theme-preset theme-light" data-theme="light" data-name="Light" onclick="setTheme('light'); location.reload();"></div>
+                        <div class="theme-preset theme-midnight" data-theme="midnight" data-name="Midnight" onclick="setTheme('midnight'); location.reload();"></div>
+                        <div class="theme-preset theme-forest" data-theme="forest" data-name="Forest" onclick="setTheme('forest'); location.reload();"></div>
+                        <div class="theme-preset theme-ocean" data-theme="ocean" data-name="Opera" onclick="setTheme('ocean'); location.reload();"></div>
+                        <div class="theme-preset theme-sunset" data-theme="sunset" data-name="Sunset" onclick="setTheme('sunset'); location.reload();"></div>
+                        <div class="theme-preset theme-neon" data-theme="neon" data-name="Neon" onclick="setTheme('neon'); location.reload();"></div>
+                        <div class="theme-preset theme-coffee" data-theme="coffee" data-name="Coffee" onclick="setTheme('coffee'); location.reload();"></div>
                     </div>
                     <div id="custom-colors" class="hidden">
                         <div class="color-picker-group">
@@ -2064,6 +2064,7 @@ return api;
 })()
     </script>
     <script>
+        
         // ===== STORAGE =====
         const storage = (function() {
             const memoryStore = {};
@@ -2168,12 +2169,11 @@ return api;
 
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
-            storage.setItem('theme', theme);
-            document.querySelectorAll('.theme-preset').forEach(el => {
-                el.classList.toggle('active', el.dataset.theme === theme);
-            });
-            document.getElementById('custom-colors').classList.toggle('hidden', theme !== 'custom');
-            if (theme === 'custom') loadCustomColors();
+            localStorage.setItem('theme', theme);
+            // Update active state on presets
+            document.querySelectorAll('.theme-preset').forEach(preset => {
+            preset.classList.toggle('active', preset.dataset.theme === theme);
+        });
         }
 
         function loadCustomColors() {
@@ -2850,7 +2850,7 @@ return api;
                 history: [],
                 historyIndex: -1
             };
-            const blob = new Blob([NEW_TAB_HTML], { type: 'text/html' });
+            const blob = new Blob([getThemedNewTabHTML()], { type: 'text/html' });
             frame.src = URL.createObjectURL(blob);
             tabs.push(tab);
             document.getElementById("iframe-container").appendChild(frame);
@@ -3223,6 +3223,55 @@ return api;
                 storage.setObject('history', []);
             }
         });
+        const ORIGINAL_NEW_TAB_HTML = NEW_TAB_HTML;
+
+// Function to get themed NEW_TAB_HTML
+function getThemedNewTabHTML() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    
+    // Dark theme uses original
+    if (theme === 'dark') {
+        return ORIGINAL_NEW_TAB_HTML;
+    }
+    
+    // Generate themed background
+    const style = getComputedStyle(document.documentElement);
+    const bg = style.getPropertyValue('--bg').trim() || '#0a0a0a';
+    const surface = style.getPropertyValue('--surface').trim() || '#0f0f0f';
+    const accent = style.getPropertyValue('--accent').trim() || '#ffffff';
+    const border = style.getPropertyValue('--border').trim() || '#1f1f1f';
+    
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+        <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1920" y2="1080">
+                <stop offset="0%" stop-color="${bg}"/>
+                <stop offset="50%" stop-color="${surface}"/>
+                <stop offset="100%" stop-color="${bg}"/>
+            </linearGradient>
+            <radialGradient id="a" cx="960" cy="540" r="400">
+                <stop offset="0%" stop-color="${accent}" stop-opacity="0.1"/>
+                <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
+            </radialGradient>
+            <pattern id="p" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M40 0H0V40" fill="none" stroke="${border}" stroke-width="10" opacity="0.3"/>
+            </pattern>
+        </defs>
+        <rect width="1920" height="1080" fill="url(#g)"/>
+        <rect width="1920" height="1080" fill="url(#p)"/>
+        <circle cx="960" cy="540" r="300" fill="url(#a)"/>
+    </svg>`;
+    
+    const themedBg = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+    
+    // Replace the background in the HTML string
+    // This handles the case where background is in a style attribute
+    return ORIGINAL_NEW_TAB_HTML.replace(
+        /background(?:-image)?:\s*url\(['"]?data:[^'")]+['"]?\)/,
+        `background-image: url(${themedBg})`
+    );
+}
+
+        
     </script>
 
 </div><style>:root, html, body { height: auto !important; max-height: 5000px !important; overflow-x: hidden !important; overflow-y: auto !important; background: transparent !important; } </style><script>(function() {var lastHeight = 0;var debounceTimer = null;function reportHeight() {var rect = document.body.getBoundingClientRect();var h = Math.ceil(rect.height);if (h !== lastHeight && h > 0) {lastHeight = h;window.parent.postMessage({ type: "html-sandbox-height", height: h }, "*");}}new ResizeObserver(function() {clearTimeout(debounceTimer);debounceTimer = setTimeout(reportHeight, 100);}).observe(document.body);window.addEventListener("load", function() {window.parent.postMessage({ type: "html-sandbox-ready" }, "*");});document.fonts && document.fonts.ready.then(function() {reportHeight();});})();</script></body></html>
