@@ -1,5 +1,5 @@
-index.html is a game site <br/>
-Logo.svg is an image version <br/>
+Netlii.html is a game site <br/>
+Netlii.svg is an image version <br/>
 Bubber.svg is another image version but its hidden behind bubber image <br/>
 Eggy.svg & Eggy.html is shell shockers <br/>
 NEXUS.svg & NEXUS.html are both a single file version of [nexus-proxy](https://github.com/bubbergamesites/Nexus-proxy) (highly recommended)</br>
