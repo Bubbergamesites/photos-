@@ -515,12 +515,12 @@
     <section class="hero">
         <h1>GOOGOLPLEX</h1>
         <p>500+ unblocked games. One epic hub. Play instantly — no downloads, no restrictions.</p>
-
         <div class="search-container">
             <div class="search-box glass">
                 <input type="text" id="gameSearch" placeholder="Search games..." onkeyup="filterGames()">
                 <button onclick="filterGames()">Search</button>
             </div>
+        <text id="subtitle">...</text>
         </div>
     </section>
 
@@ -3284,9 +3284,7 @@
                     "zombotronreboot",
                     "zrist",
                     "zuma",
-                    "zumashooter",
-                    "�oo",
-                    "?"
+                    "zumashooter"                 
                 ]
             },
             popular: {
@@ -4022,7 +4020,97 @@
         }
 
         window.addEventListener('DOMContentLoaded', init);
-    </script>
-</body>
+      
+      function getRandomGreeting() {
+  var greetings = [
+    "Bubber is the goat",
+    "game site on steroids",
+    "bubbah..",
+    "zip it, lock it, put it in your pocket",
+    "try Magical Mini, it's lemon fresh!",
+    "the solution to your problems",
+    "New Look, Same great taste!",
+    "Honey, where are my pants?",
+    "it's glummy",
+    "bubba squimch?",
+    "liar liar pants on fire",
+    "im boopy box!",
+    "poodlepoop butt-biscuits",
+    "jablicky asparagus timmypop",
+    "How many sides does a circle have?",
+    "You can read btw",
+    "Made you look!",
+    "Redbull gives you wings...",
+    "Since 2023!",
+    "a chimp turned mice, a tragic tale....",
+    "As seen on TV!",
+    "guess what! vvmvvh",
+    "Cold as ice!",
+    "Made in the US!",
+    "Made by Bubber!",
+    "sves rusr goody goody!",
+    "Reload the page NOW!",
+    "Please don't jump on the pixels",
+    "Running Netlii.exe",
+    "WARNING: You may lose your pocket chimp if you proceed!",
+    "Do you bite your ice cream?",
+    "#Relatable",
+    "You got bees on your phone?",
+    "Powered by hamsters!",
+    "*insert cool explosion*",
+    "Gotta go fast!",
+    "we do have shellshockers",
+    "james the popsicle?!",
+    "Sponsored by RAID SHADOW LEGENDS",
+    "Sponsored by Chimp & co!",
+    "la pa",
+    "Powered by Frank the stupid ass laptop!",
+    "the terminal velocity of a baby is 43 MPH",
+    "Everlong",
+    "I'm gonna pop some gizzies",
+    "Shoutout to my cat.",
+    "thx stackoverflow!",
+    "are you a gamer?",
+    "It is time to get funky!",
+    "I SWEAR TO GOD I DID NOT LIGHT JOHNS HOUSE ON FIRE.",
+    "Don't ask questions if you can't handle the answers!",
+    "If you are using Microsoft Edge, you need some help.",
+    "Shoutout to Schlopis!",
+    "Shoutout to PRG!",
+    "Low price, high scores.",
+    "do mice like it when i laa.",
+    "Is this the United Airlines costumer service center?",
+    "bottom text",
+    "buzzy bee disposal center",
+    "No fun allowed",
+    "dude. GRAGGLE.",
+    "i do love buying pringle guzzies",
+    "no matter what you say I DONT HAVE HORSES",
+    "WHERES MY V-BUCKS MOM >:(",
+    "reload for another message",
+    "hi graggle",
+    "i just splatooned on my dog!",
+    "And just to think I knew him before he was famous",
+    "Trust me, I did not copy Minecraft with this",
+    "It is everyday bro",
+    "ðŸ—£ï¸ðŸ”¥ðŸ”¥ðŸ”¥",
+    "This is the 5th time this week, and it's only Monday",
+    "You bum",
+    "Wad ass hair reveal?? what are you, SICK??",
+    "hamgurber.",
+    "Designed for your browser, built for your break.",
+    "Drift Boss is pretty fun",
+    "plurg :D",
+    "ts was NOT fun to build :(",
+    "The skeleton with the sword. HE FOUND YOU!",
+    "I spent too much time making these",
+    "Your home for unblocked essentials.",
+   ];
+    var randomIndex = Math.floor(Math.random() * greetings.length);
+    return greetings[randomIndex];
+}
 
+document.getElementById("subtitle").innerText = getRandomGreeting();
+    </script>
+    </body>
 </html>
